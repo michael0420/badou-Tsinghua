@@ -1,0 +1,57 @@
+from sklearn import datasets
+import numpy as np
+
+class PCAtest():
+   def __init__(self,k):
+       #降到k维
+       self.k = k
+       
+   # 加载鸢尾花数据集中的特征作为PCA的原始数据集 
+   def loadIris(self):
+       data = datasets.load_iris()["data"]
+       return data
+   #数据标准化（去均值）
+   def stand_data(self,data):
+       #axis = 0,按列取值求均值
+       mean_vector = np.mean(data,axis=0)
+       return mean_vector,data -mean_vector
+
+   # 计算协方差矩阵
+   def getCovMat(self,standData):
+       # rowvar=0表示数据的每一列代表一个维度
+       return np.cov(standData,rowvar=0)
+
+   # 计算协方差矩阵的特征值和特征向量
+   def getFValueAndFVector(self,covMat):
+       fValue,fVector = np.linalg.eig(covMat)
+       return fValue,fVector
+
+   # 得到特征向量矩阵
+   def getVectorMatrix(self,fValue,fVector):
+       #从大到小排序，并返回排序后的原索引值
+       fValueSort = np.argsort(-fValue)
+       #print(fValueSort)
+       fValueTopN = fValueSort[:self.k]
+       #print(fValueTopN)
+       return fVector[:,fValueTopN]
+
+   # 得到降维后的数据
+   def getResult(self,data,vectorMat):
+       return np.dot(data,vectorMat)
+
+
+if __name__=="__main__":
+   pca = PCAtest(2)
+   data = pca.loadIris()
+   print("原始数据：\n%s"%data)
+   (mean_vector ,standdata)= pca.stand_data(data)
+   print("均值向量为：%s \n标准化数据：\n%s" % (mean_vector, standdata))
+   cov_mat = pca.getCovMat(standdata)
+   print("协方差矩阵:\n%s"%cov_mat)
+   fvalue,fvector = pca.getFValueAndFVector(cov_mat)
+   print("特征值为：%s\n特征向量为：\n%s" %(fvalue,fvector))
+   fvectormat = pca.getVectorMatrix(fvalue,fvector)
+   print("最终需要的特征向量：\n%s"%fvector)
+   newdata = pca.getResult(standdata,fvectormat)
+   print("降维后的数据：\n%s"%newdata)
+   print("最终重构结果为:\n{}".format(np.mat(newdata) * fvectormat .T + mean_vector))
